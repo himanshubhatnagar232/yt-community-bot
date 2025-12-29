@@ -48,20 +48,26 @@ def send_to_telegram(text):
     requests.post(url, json=payload)
 
 def main():
-    last_id = ""
-    if os.path.exists("last_post_id.txt"):
-        last_id = open("last_post_id.txt").read().strip()
+    last_id = open("last_post_id.txt").read().strip() if os.path.exists("last_post_id.txt") else None
 
     posts = fetch_community_posts()
     if not posts:
         return
 
-    newest_id, newest_text = posts[0]
+    new_posts = []
 
-    if newest_id != last_id:
-        send_to_telegram(newest_text)
+    for post_id, text in posts:
+        if post_id == last_id:
+            break
+        new_posts.append((post_id, text))
+
+    # Send from oldest → newest
+    for post_id, text in reversed(new_posts):
+        send_to_telegram(text)
+
+    if new_posts:
         with open("last_post_id.txt", "w") as f:
-            f.write(newest_id)
+            f.write(new_posts[0][0])
 
 if __name__ == "__main__":
     main()
