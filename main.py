@@ -12,12 +12,35 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0"
 }
 
+def extract_backstage_posts(data):
+    posts = []
+
+    def walk(obj):
+        if isinstance(obj, dict):
+            if "backstagePostRenderer" in obj:
+                renderer = obj["backstagePostRenderer"]
+                post_id = renderer.get("postId")
+
+                text_runs = renderer.get("contentText", {}).get("runs", [])
+                text = "".join(r.get("text", "") for r in text_runs)
+
+                if post_id and text:
+                    posts.append((post_id, text))
+
+            for v in obj.values():
+                walk(v)
+
+        elif isinstance(obj, list):
+            for i in obj:
+                walk(i)
+
+    walk(data)
+    return posts
+
 def fetch_community_posts():
     html = requests.get(YOUTUBE_COMMUNITY_URL, headers=HEADERS).text
+    match = re.search(r"ytInitialData\s*=\s*(\{.*?\});", html, re.DOTALL)
 
-    print("HTML length:", len(html))
-
-    match = re.search(r"ytInitialData\s*=\s*(\{.*?\});", html)
     if not match:
         print("❌ ytInitialData not found")
         return []
@@ -25,22 +48,8 @@ def fetch_community_posts():
     data = json.loads(match.group(1))
     print("✅ ytInitialData parsed")
 
-    posts = []
-    tabs = data["contents"]["twoColumnBrowseResultsRenderer"]["tabs"]
-
-    for tab in tabs:
-        if "tabRenderer" in tab and tab["tabRenderer"].get("title") == "Community":
-            contents = tab["tabRenderer"]["content"]["sectionListRenderer"]["contents"]
-
-            for item in contents:
-                if "itemSectionRenderer" in item:
-                    for post in item["itemSectionRenderer"]["contents"]:
-                        renderer = post.get("backstagePostRenderer")
-                        if renderer:
-                            post_id = renderer["postId"]
-                            text_runs = renderer.get("contentText", {}).get("runs", [])
-                            text = "".join(r["text"] for r in text_runs)
-                            posts.append((post_id, text))
+    posts = extract_backstage_posts(data)
+    print(f"✅ Found {len(posts)} community posts")
 
     return posts
 
