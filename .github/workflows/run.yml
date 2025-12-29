@@ -25,3 +25,11 @@ jobs:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
         run: python main.py
+
+      - name: Commit last_post_id
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add last_post_id.txt
+          git commit -m "Update last processed community post" || echo "No changes"
+          git push
