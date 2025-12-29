@@ -4,7 +4,7 @@ import re
 import os
 import time
 
-YOUTUBE_COMMUNITY_URL = "https://www.youtube.com/@ClashOfClans/community"
+YOUTUBE_COMMUNITY_URL = "https://www.youtube.com/@ClashOfClans/posts"
 BOT_TOKEN = os.environ["BOT_TOKEN"]
 CHANNEL_ID = os.environ["CHANNEL_ID"]
 
