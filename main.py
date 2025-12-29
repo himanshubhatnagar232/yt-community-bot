@@ -12,6 +12,30 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0"
 }
 
+def extract_images(attachment):
+    images = []
+
+    if not attachment:
+        return images
+
+    # Case 1: single image / GIF
+    if "imageRenderer" in attachment:
+        thumbs = attachment["imageRenderer"]["image"]["thumbnails"]
+        images.append(thumbs[-1]["url"])
+
+    # Case 2: multi-image post
+    if "multiImageRenderer" in attachment:
+        for img in attachment["multiImageRenderer"]["images"]:
+            thumbs = img["image"]["thumbnails"]
+            images.append(thumbs[-1]["url"])
+
+    # Case 3: link preview (VERY common for Clash of Clans)
+    if "linkPreviewRenderer" in attachment:
+        thumbs = attachment["linkPreviewRenderer"]["thumbnail"]["thumbnails"]
+        images.append(thumbs[-1]["url"])
+
+    return images
+
 def extract_posts(data, max_posts=50):
     posts = []
 
@@ -29,15 +53,7 @@ def extract_posts(data, max_posts=50):
                 images = []
 
                 attachment = r.get("backstageAttachment", {})
-                if "imageRenderer" in attachment:
-                    thumbnails = attachment["imageRenderer"]["image"]["thumbnails"]
-                    images.append(thumbnails[-1]["url"])
-
-                if "multiImageRenderer" in attachment:
-                    for img in attachment["multiImageRenderer"]["images"]:
-                        thumbnails = img["image"]["thumbnails"]
-                        images.append(thumbnails[-1]["url"])
-
+                images = extract_images(attachment)
                 posts.append({
                     "id": post_id,
                     "text": text,
