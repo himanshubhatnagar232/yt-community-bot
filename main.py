@@ -117,7 +117,6 @@ def fetch_community_posts():
     print("✅ ytInitialData parsed")
 
     posts = extract_posts(data, max_posts=50)
-    posts.reverse()
     print(f"✅ Found {len(posts)} community posts")
 
     return posts
@@ -159,6 +158,7 @@ def main():
         if post["id"] == last_id:
             break
         new_posts.append(post)
+    new_posts.reverse()  # Send older posts first
 
     print(f"New posts to send: {len(new_posts)}")
 
