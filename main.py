@@ -12,27 +12,44 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0"
 }
 
+def normalize_image_url(url):
+    if not url:
+        return None
+
+    # Fix protocol-relative URLs
+    if url.startswith("//"):
+        url = "https:" + url
+
+    # Telegram prefers jpg/png over webp
+    if ".webp" in url:
+        url = url.replace(".webp", ".jpg")
+
+    return url
+
 def extract_images(attachment):
     images = []
 
     if not attachment:
         return images
 
+    def add_thumb(thumbs):
+        if thumbs:
+            url = normalize_image_url(thumbs[-1]["url"])
+            if url:
+                images.append(url)
+
     # Case 1: single image / GIF
     if "imageRenderer" in attachment:
-        thumbs = attachment["imageRenderer"]["image"]["thumbnails"]
-        images.append(thumbs[-1]["url"])
+        add_thumb(attachment["imageRenderer"]["image"]["thumbnails"])
 
     # Case 2: multi-image post
     if "multiImageRenderer" in attachment:
         for img in attachment["multiImageRenderer"]["images"]:
-            thumbs = img["image"]["thumbnails"]
-            images.append(thumbs[-1]["url"])
+            add_thumb(img["image"]["thumbnails"])
 
     # Case 3: link preview (VERY common for Clash of Clans)
     if "linkPreviewRenderer" in attachment:
-        thumbs = attachment["linkPreviewRenderer"]["thumbnail"]["thumbnails"]
-        images.append(thumbs[-1]["url"])
+        add_thumb(attachment["linkPreviewRenderer"]["thumbnail"]["thumbnails"])
 
     return images
 
@@ -108,14 +125,15 @@ def send_text(text):
     )
 
 def send_photo(photo_url, caption):
-    requests.post(
+    r = requests.post(
         f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto",
         json={
             "chat_id": CHANNEL_ID,
             "photo": photo_url,
-            "caption": caption[:1024]  # Telegram limit
+            "caption": caption[:1024]
         }
     )
+    print("sendPhoto status:", r.status_code, r.text)
 
 def main():
     posts = fetch_community_posts()
@@ -141,6 +159,7 @@ def main():
         text = header + (post["text"] or "")
 
         if post["images"]:
+            print("Post images:", post["images"])
             send_photo(post["images"][0], text)
         else:
             send_text(text)
