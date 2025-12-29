@@ -2,6 +2,7 @@ import requests
 import json
 import re
 import os
+import time
 
 YOUTUBE_COMMUNITY_URL = "https://www.youtube.com/@ClashOfClans/community"
 BOT_TOKEN = os.environ["BOT_TOKEN"]
@@ -60,6 +61,10 @@ def main():
         if post_id == last_id:
             break
         new_posts.append((post_id, text))
+
+    # test
+    send_to_telegram(f'Hello there {time.time()}')
+    # test
 
     # Send from oldest → newest
     for post_id, text in reversed(new_posts):
